@@ -3,7 +3,7 @@ import regex as re
 import itertools
 import collections
 
-from typing import BinaryIO
+from typing import BinaryIO, Union
 from multiprocessing import Pool
 
 # Pattern for regex based tokenizer
@@ -14,7 +14,7 @@ def pretokenize_multi(
     file: str,
     special_tokens: list[str],
     ncpu: int = 8,
-) -> dict[str, int]:
+) -> dict[Union[tuple[bytes], str], int]:
     """
     Return counts of tokens as parsed by a regex-based pretokenizer for a file, parallelized
     across multiple cores.
@@ -23,10 +23,7 @@ def pretokenize_multi(
         boundaries = find_chunk_boundaries(f, ncpu, b"<|endoftext|>")
 
     # Pretokenize each chunk
-    args = [
-        (file, start, end, special_tokens)
-        for start, end in zip(boundaries[:-1], boundaries[1:])
-    ]
+    args = [(file, start, end, special_tokens) for start, end in zip(boundaries[:-1], boundaries[1:])]
     with Pool(processes=ncpu) as p:
         chunked_counts = p.starmap(pretokenize_chunk, args)
 
@@ -43,7 +40,8 @@ def pretokenize_chunk(
     start: int,
     end: int,
     special_tokens: list[str],
-) -> dict[str, int]:
+    encode=True,
+) -> dict[Union[tuple[bytes], str], int]:
     """
     Return counts of tokens as parsed by a regex-based pretokenizer for a file chunk section.
     Example output: {('p', 'o', 'o', 'p') : 1}
@@ -64,7 +62,8 @@ def pretokenize_chunk(
     # Count pretokens
     counter = collections.Counter()
     for pretoken in pretokens:
-        counter[tuple(pretoken.group(0))] += 1
+        key = pretoken.group(0).encode("utf-8") if encode else pretoken.group(0)
+        counter[tuple(key)] += 1
 
     return counter
 

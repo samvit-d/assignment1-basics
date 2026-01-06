@@ -3,9 +3,11 @@ import time
 
 from .pretok import pretokenize_chunk, pretokenize_multi
 
+
 @pytest.fixture
 def large_file():
     return "../../data/TinyStoriesV2-GPT4-valid.txt"
+
 
 @pytest.fixture
 def short_file(tmp_path):
@@ -35,6 +37,10 @@ def rep_short_file(tmp_path):
     return p
 
 
+def byte_tuple(string):
+    return tuple(string.encode("utf-8"))
+
+
 def test_counts_ignore_special_tokens(short_file):
     start = time.time()
     out = pretokenize_chunk(
@@ -46,10 +52,10 @@ def test_counts_ignore_special_tokens(short_file):
     end = time.time()
     print("time: ", end - start)
 
-    assert out[tuple("poop")] == 2
-    assert out[tuple("abc")] == 2
-    assert out[tuple("bad")] == 1
-    assert out[tuple("end")] == 1
+    assert out[byte_tuple("poop")] == 2
+    assert out[byte_tuple("abc")] == 2
+    assert out[byte_tuple("bad")] == 1
+    assert out[byte_tuple("end")] == 1
 
 
 def test_counts_ignore_special_tokens_multi(rep_short_file):
@@ -62,10 +68,10 @@ def test_counts_ignore_special_tokens_multi(rep_short_file):
     end = time.time()
     print("time: ", end - start)
 
-    assert out[tuple("poop")] == 16
-    assert out[tuple("abc")] == 16
-    assert out[tuple("bad")] == 8
-    assert out[tuple("end")] == 8
+    assert out[byte_tuple("poop")] == 16
+    assert out[byte_tuple("abc")] == 16
+    assert out[byte_tuple("bad")] == 8
+    assert out[byte_tuple("end")] == 8
 
 
 def test_large_file_time(large_file, trials=1):
