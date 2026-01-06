@@ -11,7 +11,7 @@ PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s
 
 
 def pretokenize_multi(
-    file: BinaryIO,
+    file: str,
     special_tokens: list[str],
     ncpu: int = 8,
 ) -> dict[str, int]:
@@ -31,13 +31,15 @@ def pretokenize_multi(
         chunked_counts = p.starmap(pretokenize_chunk, args)
 
     # Merge chunked counts
-    counts = sum(chunked_counts)
+    counts = collections.Counter()
+    for chunked_count in chunked_counts:
+        counts += chunked_count
 
     return counts
 
 
 def pretokenize_chunk(
-    file: BinaryIO,
+    file: str,
     start: int,
     end: int,
     special_tokens: list[str],
@@ -57,12 +59,12 @@ def pretokenize_chunk(
         mini_chunks = re.split(special_tokens_regex, chunk)  # Split on special characters
         for mini_chunk in mini_chunks:
             mini_iters.append(re.finditer(PAT, mini_chunk))
-    pretokens = itertools.chain(mini_iters)  # Chain together to create one iterator
+    pretokens = itertools.chain.from_iterable(mini_iters)  # Chain together to create one iterator
 
     # Count pretokens
     counter = collections.Counter()
     for pretoken in pretokens:
-        counter[tuple(pretoken)] += 1
+        counter[tuple(pretoken.group(0))] += 1
 
     return counter
 
