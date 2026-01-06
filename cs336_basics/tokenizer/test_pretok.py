@@ -1,9 +1,11 @@
-import re
 import pytest
 import time
 
 from .pretok import pretokenize_chunk, pretokenize_multi
 
+@pytest.fixture
+def large_file():
+    return "../../data/TinyStoriesV2-GPT4-valid.txt"
 
 @pytest.fixture
 def short_file(tmp_path):
@@ -64,3 +66,31 @@ def test_counts_ignore_special_tokens_multi(rep_short_file):
     assert out[tuple("abc")] == 16
     assert out[tuple("bad")] == 8
     assert out[tuple("end")] == 8
+
+
+def test_large_file_time(large_file, trials=1):
+    start = time.time()
+    for _ in range(trials):
+        _ = pretokenize_multi(
+            file=large_file,
+            special_tokens=["<|endoftext|>"],
+            ncpu=1,
+        )
+    end = time.time()
+    print("time: ", (end - start) / trials)
+
+    assert True
+
+
+def test_large_file_time_multi(large_file, trials=8):
+    start = time.time()
+    for _ in range(trials):
+        _ = pretokenize_multi(
+            file=large_file,
+            special_tokens=["<|endoftext|>"],
+            ncpu=8,
+        )
+    end = time.time()
+    print("time: ", (end - start) / trials)
+
+    assert True
